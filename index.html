@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RXPharma Clinical Support — Interactive Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+  body { background: #F4F8FD; color: #2C3E50; }
+
+  /* ====== Prototype Wrapper / Navigation ====== */
+  .proto-toolbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 42px;
+    background: #2C3E50; color: white; display: flex;
+    align-items: center; padding: 0 18px; z-index: 1000;
+    font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .proto-toolbar strong { color: #6BA4F0; margin-right: 14px; font-size: 13px; }
+  .proto-toolbar button {
+    background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.18);
+    padding: 5px 12px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 11px;
+    transition: all 0.18s;
+  }
+  .proto-toolbar button:hover { background: rgba(255,255,255,0.16); }
+  .proto-toolbar button.active { background: #4A90E2; border-color: #4A90E2; }
+  .proto-toolbar .spacer { flex: 1; }
+  .proto-toolbar .meta { font-size: 11px; opacity: 0.7; }
+
+  .screen { display: none; padding-top: 42px; min-height: 100vh; animation: fadeIn 0.3s; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ====== Shared App Header ====== */
+  .app-header {
+    background: linear-gradient(135deg, #6BA4F0 0%, #4A90E2 100%);
+    height: 64px; display: flex; align-items: center;
+    padding: 0 28px; color: white;
+    box-shadow: 0 2px 6px rgba(74,144,226,0.15);
+  }
+  .logo-box {
+    width: 38px; height: 38px; background: white;
+    border-radius: 7px; display: flex; align-items: center;
+    justify-content: center; font-weight: bold;
+    color: #4A90E2; font-size: 17px; margin-right: 12px;
+  }
+  .brand { font-size: 17px; font-weight: 600; }
+  .app-nav {
+    margin-left: auto; display: flex; gap: 8px;
+    font-size: 14px; align-items: center;
+  }
+  .app-nav a {
+    color: white; text-decoration: none; padding: 7px 14px;
+    border-radius: 6px; cursor: pointer; transition: background 0.18s;
+  }
+  .app-nav a:hover { background: rgba(255,255,255,0.12); }
+  .app-nav a.active { background: rgba(255,255,255,0.22); font-weight: 600; }
+  .profile-circle {
+    width: 34px; height: 34px; background: white; color: #4A90E2;
+    border-radius: 50%; display: inline-flex; align-items: center;
+    justify-content: center; font-weight: bold; font-size: 13px;
+    margin-left: 8px; cursor: pointer;
+  }
+  .container { padding: 26px 30px; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 26px; color: #2C3E50; margin-bottom: 4px; }
+  h2 { font-size: 18px; color: #2C3E50; margin-bottom: 14px; }
+  .subtitle { color: #7A8B9C; margin-bottom: 24px; font-size: 14px; }
+
+  .footer {
+    padding: 14px 30px; background: white;
+    border-top: 1px solid #E3EEF9;
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #7A8B9C; margin-top: 28px;
+  }
+  .badge {
+    background: #E8F5E8; color: #2D7A2D;
+    padding: 3px 10px; border-radius: 4px;
+    font-weight: 600; font-size: 11px;
+  }
+
+  /* ====== Login Screen ====== */
+  .login-main {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 42px - 64px - 50px); padding: 30px;
+  }
+  .login-card {
+    background: white; border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(74,144,226,0.18);
+    padding: 44px 50px; width: 420px;
+    border: 1px solid #E3EEF9;
+  }
+  .login-card h1 { font-size: 28px; text-align: center; margin-bottom: 8px; }
+  .login-card .subtitle { text-align: center; margin-bottom: 30px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label {
+    display: block; font-size: 14px; color: #4A5C6E;
+    margin-bottom: 7px; font-weight: 500;
+  }
+  .form-group input {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid #C9DDF0; border-radius: 8px;
+    font-size: 14px; background: #FAFCFE; color: #2C3E50;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-group input:focus { border-color: #4A90E2; }
+  .row {
+    display: flex; align-items: center;
+    justify-content: space-between; margin: 16px 0 22px 0;
+    font-size: 13px;
+  }
+  .checkbox-wrap { display: flex; align-items: center; }
+  .checkbox-wrap input { margin-right: 8px; accent-color: #4A90E2; }
+  .checkbox-wrap label { color: #4A5C6E; cursor: pointer; }
+  .text-link { color: #4A90E2; text-decoration: none; cursor: pointer; }
+  .text-link:hover { text-decoration: underline; }
+  .btn-primary-full {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #6BA4F0 0%, #4A90E2 100%);
+    color: white; border: none; border-radius: 8px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 3px 8px rgba(74,144,226,0.25);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-primary-full:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(74,144,226,0.32);
+  }
+  .help-text {
+    text-align: center; margin-top: 18px;
+    color: #7A8B9C; font-size: 13px;
+  }
+
+  /* ====== Dashboard ====== */
+  .greeting { color: #7A8B9C; margin-bottom: 22px; font-size: 14px; }
+  .stat-row { display: flex; gap: 18px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-card {
+    background: white; border-radius: 12px; flex: 1; min-width: 250px;
+    box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    overflow: hidden; border: 1px solid #E3EEF9;
+    cursor: pointer; transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74,144,226,0.16);
+  }
+  .stat-card .head {
+    padding: 14px 18px; color: white; font-weight: 600; font-size: 13px;
+  }
+  .stat-card .body { padding: 22px 18px; text-align: center; }
+  .stat-card .num { font-size: 38px; font-weight: bold; }
+  .stat-card .sub { color: #7A8B9C; font-size: 12px; margin-top: 4px; }
+  .head-blue { background: linear-gradient(135deg, #7CB6F2, #5B9DE8); }
+  .head-orange { background: linear-gradient(135deg, #FFB97A, #F39C5E); }
+  .head-red { background: linear-gradient(135deg, #F5A0A0, #E87878); }
+  .num-blue { color: #4A90E2; }
+  .num-orange { color: #E08544; }
+  .num-red { color: #D06868; }
+
+  .table-wrap {
+    background: white; border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    overflow: hidden; border: 1px solid #E3EEF9;
+  }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #F4F8FD; padding: 13px 18px;
+    text-align: left; font-size: 13px; color: #4A5C6E;
+    font-weight: 600; border-bottom: 1.5px solid #E3EEF9;
+  }
+  .data-table td {
+    padding: 13px 18px; font-size: 13px; color: #2C3E50;
+    border-bottom: 1px solid #F0F5FA;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: #F8FBFE; cursor: pointer; }
+  .pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .pill-orange { background: #FFF1E0; color: #C97324; }
+  .pill-red { background: #FBE4E4; color: #B53A3A; }
+  .pill-green { background: #E8F5E8; color: #2D7A2D; }
+
+  /* ====== Patient Search ====== */
+  .search-box {
+    background: white; border-radius: 12px; padding: 22px;
+    box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    border: 1px solid #E3EEF9; margin-bottom: 22px;
+  }
+  .search-row { display: flex; gap: 12px; }
+  .search-input {
+    flex: 1; padding: 13px 16px;
+    border: 1.5px solid #C9DDF0; border-radius: 8px;
+    font-size: 14px; background: #FAFCFE; outline: none;
+  }
+  .search-input:focus { border-color: #4A90E2; }
+  .btn-search {
+    background: linear-gradient(135deg, #6BA4F0, #4A90E2);
+    color: white; padding: 13px 36px;
+    border: none; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer;
+    box-shadow: 0 3px 8px rgba(74,144,226,0.22);
+  }
+  .filters {
+    margin-top: 14px; display: flex; gap: 8px;
+    align-items: center; font-size: 13px; flex-wrap: wrap;
+  }
+  .filter-chip {
+    padding: 5px 12px; border-radius: 14px;
+    background: #F0F6FC; color: #4A90E2;
+    border: 1px solid #C9DDF0; cursor: pointer;
+    font-size: 12px;
+  }
+  .filter-chip.active { background: #4A90E2; color: white; border-color: #4A90E2; }
+  .results-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 14px;
+  }
+  .patient-card {
+    background: white; border-radius: 10px; padding: 18px 22px;
+    box-shadow: 0 2px 8px rgba(74,144,226,0.06);
+    border: 1px solid #E3EEF9; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 18px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .patient-card:hover {
+    border-color: #4A90E2;
+    box-shadow: 0 4px 14px rgba(74,144,226,0.15);
+  }
+  .patient-info { flex: 1; }
+  .patient-info strong { font-size: 16px; display: block; margin-bottom: 4px; }
+  .meta-row { font-size: 13px; color: #7A8B9C; }
+  .meta-row span { margin-right: 18px; }
+  .gene-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #4A5C6E;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-green { background: #69DB7C; box-shadow: 0 0 0 3px rgba(105,219,124,0.18); }
+  .dot-gray { background: #C5CDD5; }
+  .priority-badge { padding: 4px 11px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .pri-high { background: #FBE4E4; color: #B53A3A; }
+  .pri-med { background: #FFF1E0; color: #C97324; }
+  .pri-low { background: #E8F5E8; color: #2D7A2D; }
+  .btn-view {
+    background: linear-gradient(135deg, #6BA4F0, #4A90E2);
+    color: white; padding: 9px 22px;
+    border: none; border-radius: 7px; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  /* ====== Patient Profile ====== */
+  .breadcrumb {
+    padding: 12px 30px; font-size: 13px;
+    color: #7A8B9C; background: white;
+    border-bottom: 1px solid #E3EEF9;
+  }
+  .breadcrumb a { color: #4A90E2; text-decoration: none; cursor: pointer; }
+  .patient-banner {
+    background: white; border-radius: 12px;
+    padding: 22px 26px; margin-bottom: 22px;
+    box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    border: 1px solid #E3EEF9; border-left: 5px solid #4A90E2;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .patient-name { font-size: 22px; margin-bottom: 6px; font-weight: 600; }
+  .patient-meta { font-size: 13px; color: #7A8B9C; }
+  .patient-meta span { margin-right: 16px; }
+  .quick-actions { display: flex; gap: 8px; }
+  .action-btn {
+    padding: 8px 16px; background: #F0F6FC;
+    color: #4A90E2; border: 1px solid #C9DDF0;
+    border-radius: 7px; font-size: 12px;
+    font-weight: 600; cursor: pointer;
+  }
+  .grid-2col { display: flex; gap: 22px; flex-wrap: wrap; }
+  .panel {
+    flex: 1 1 0; min-width: 380px;
+    background: white; border-radius: 12px;
+    padding: 22px; box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    border: 1px solid #E3EEF9;
+  }
+  .panel h2 {
+    padding-bottom: 12px; border-bottom: 1.5px solid #E3EEF9;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .gene-card {
+    padding: 14px 16px; margin-bottom: 12px;
+    border-radius: 9px; background: #F8FBFE;
+    border: 1px solid #E3EEF9;
+  }
+  .gene-name { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
+  .gene-info { font-size: 13px; color: #4A5C6E; line-height: 1.7; }
+  .gene-info strong { color: #2C3E50; }
+  .pheno-tag {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px;
+    font-weight: 600; margin-top: 6px;
+  }
+  .pheno-int { background: #FFF1E0; color: #C97324; }
+  .pheno-norm { background: #E8F5E8; color: #2D7A2D; }
+  .alert-card {
+    padding: 14px 16px; margin-bottom: 12px;
+    border-radius: 9px; border-left: 4px solid;
+  }
+  .alert-high { border-left-color: #E87878; background: #FBEFEF; }
+  .alert-low { border-left-color: #69DB7C; background: #F0F9F0; }
+  .alert-icon {
+    display: inline-block; width: 22px; height: 22px;
+    border-radius: 50%; color: white; text-align: center;
+    line-height: 22px; font-size: 12px; font-weight: bold;
+    margin-right: 8px; vertical-align: middle;
+  }
+  .icon-high { background: #E87878; }
+  .icon-low { background: #69DB7C; }
+  .alert-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+  .alert-title.high-text { color: #B53A3A; }
+  .alert-body { font-size: 13px; color: #4A5C6E; line-height: 1.5; }
+  .alert-meta { font-size: 11px; color: #7A8B9C; margin-top: 6px; }
+
+  /* ====== Medication Search ====== */
+  .selected-banner {
+    background: linear-gradient(90deg, #E3F0FB, #F4F8FD);
+    border-left: 4px solid #4A90E2;
+    padding: 14px 22px; border-radius: 8px;
+    margin-bottom: 22px; font-size: 15px;
+  }
+  .selected-banner strong { color: #4A90E2; font-size: 17px; }
+  .recent-tag {
+    display: inline-block; padding: 4px 11px;
+    background: #F0F6FC; border-radius: 12px;
+    color: #4A90E2; margin-left: 6px; cursor: pointer;
+    border: 1px solid #C9DDF0; font-size: 12px;
+  }
+  .info-row {
+    padding: 8px 0; font-size: 14px; color: #4A5C6E;
+    border-bottom: 1px solid #F0F5FA;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-label {
+    display: inline-block; min-width: 130px;
+    color: #7A8B9C; font-weight: 600; font-size: 13px;
+  }
+  .full-panel {
+    background: white; border-radius: 12px;
+    padding: 22px; box-shadow: 0 3px 10px rgba(74,144,226,0.08);
+    border: 1px solid #E3EEF9; margin-top: 22px;
+  }
+  .impact-box {
+    padding: 16px 18px; border-radius: 9px;
+    border-left: 4px solid #FFB97A;
+    background: #FFF8EE; margin-bottom: 14px;
+  }
+  .cpic-box {
+    padding: 16px 18px; border-radius: 9px;
+    border-left: 4px solid #4A90E2;
+    background: #EEF6FE;
+  }
+  .impact-title { font-weight: bold; font-size: 15px; margin-bottom: 6px; }
+  .cpic-title { font-weight: bold; color: #4A90E2; font-size: 15px; margin-bottom: 8px; }
+  .cpic-body { font-size: 13px; line-height: 1.6; }
+  .impact-body { font-size: 13px; color: #4A5C6E; line-height: 1.6; }
+  .cpic-level {
+    display: inline-block; padding: 2px 9px;
+    background: #4A90E2; color: white;
+    border-radius: 10px; font-size: 11px;
+    font-weight: 600; margin-left: 8px;
+  }
+  .action-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { padding: 10px 22px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-blue { background: linear-gradient(135deg, #6BA4F0, #4A90E2); color: white; }
+  .btn-outline {
+    background: white; color: #4A90E2;
+    border: 1.5px solid #C9DDF0;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .app-nav { gap: 4px; }
+    .app-nav a { padding: 4px 8px; font-size: 12px; }
+    .brand { font-size: 14px; }
+    .container { padding: 16px; }
+    .stat-row, .grid-2col, .search-row { flex-direction: column; }
+    .login-card { padding: 30px 24px; width: 100%; max-width: 380px; }
+    .patient-card { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== Prototype Toolbar (acts as Moqups-style screen switcher) ====== -->
+<div class="proto-toolbar">
+  <strong>RXPharma Prototype</strong>
+  <button onclick="showScreen('login')" id="btn-login" class="active">1 · Login</button>
+  <button onclick="showScreen('dashboard')" id="btn-dashboard">2 · Dashboard</button>
+  <button onclick="showScreen('search')" id="btn-search">3 · Patient Search</button>
+  <button onclick="showScreen('profile')" id="btn-profile">4 · Patient Profile</button>
+  <button onclick="showScreen('medication')" id="btn-medication">5 · Medication Search</button>
+  <div class="spacer"></div>
+  <span class="meta">Click any element to navigate · WCAG 2.1 AA</span>
+</div>
+
+<!-- ====== Screen 1: Login ====== -->
+<div class="screen active" id="screen-login">
+  <div class="app-header">
+    <div class="logo-box">RxP</div>
+    <div class="brand">RXPharma Clinical Support</div>
+  </div>
+  <div class="login-main">
+    <div class="login-card">
+      <h1>Sign In</h1>
+      <p class="subtitle">Welcome back. Please log in to continue.</p>
+      <div class="form-group">
+        <label for="user">Username or Email</label>
+        <input type="text" id="user" value="dr.Ndeh@hospital.org" placeholder="dr.Ndeh@hospital.org">
+      </div>
+      <div class="form-group">
+        <label for="pwd">Password</label>
+        <input type="password" id="pwd" value="••••••••••" placeholder="Enter password">
+      </div>
+      <div class="row">
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="rem" checked>
+          <label for="rem">Remember me</label>
+        </div>
+        <a class="text-link">Forgot Password?</a>
+      </div>
+      <button class="btn-primary-full" onclick="showScreen('dashboard')">Sign In</button>
+      <p class="help-text">Need help? <a class="text-link">Contact IT Support</a></p>
+    </div>
+  </div>
+  <div class="footer">
+    <span>© 2026 RXPharma | Privacy | Accessibility | Support</span>
+    <span class="badge">WCAG 2.1 AA Compliant</span>
+  </div>
+</div>
+
+<!-- ====== Screen 2: Dashboard ====== -->
+<div class="screen" id="screen-dashboard">
+  <div class="app-header">
+    <div class="logo-box">RxP</div>
+    <div class="brand">RXPharma Clinical Support</div>
+    <div class="app-nav">
+      <a class="active">Dashboard</a>
+      <a onclick="showScreen('search')">Search</a>
+      <a onclick="showScreen('profile')">Patient</a>
+      <a>Reports</a>
+      <a>Help</a>
+      <span class="profile-circle">DS</span>
+    </div>
+  </div>
+  <div class="container">
+    <h1>Dashboard</h1>
+    <p class="greeting">Welcome back, Dr. Ndeh — Here's today's overview</p>
+    <div class="stat-row">
+      <div class="stat-card" onclick="showScreen('search')">
+        <div class="head head-blue">Patients with Genetic Results</div>
+        <div class="body">
+          <div class="num num-blue">247</div>
+          <div class="sub">+12 this week</div>
+        </div>
+      </div>
+      <div class="stat-card" onclick="showScreen('profile')">
+        <div class="head head-orange">Pending Recommendations</div>
+        <div class="body">
+          <div class="num num-orange">12</div>
+          <div class="sub">Awaiting review</div>
+        </div>
+      </div>
+      <div class="stat-card" onclick="showScreen('profile')">
+        <div class="head head-red">High Priority Alerts</div>
+        <div class="body">
+          <div class="num num-red">3</div>
+          <div class="sub">Requires attention</div>
+        </div>
+      </div>
+    </div>
+    <h2>Recent Activity</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Patient</th><th>Medication</th><th>Gene</th>
+            <th>Recommendation</th><th>Priority</th><th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="showScreen('profile')">
+            <td><strong>Jane Doe</strong></td><td>Clopidogrel</td><td>CYP2C19</td>
+            <td>Consider alternative antiplatelet</td>
+            <td><span class="pill pill-red">High</span></td><td>Apr 27, 2026</td>
+          </tr>
+          <tr onclick="showScreen('profile')">
+            <td><strong>Peter Ndeh</strong></td><td>Warfarin</td><td>CYP2C9</td>
+            <td>Reduce dose by 25%</td>
+            <td><span class="pill pill-orange">Medium</span></td><td>Apr 26, 2026</td>
+          </tr>
+          <tr onclick="showScreen('profile')">
+            <td><strong>Maria Garcia</strong></td><td>Codeine</td><td>CYP2D6</td>
+            <td>Avoid — Poor metabolizer</td>
+            <td><span class="pill pill-red">High</span></td><td>Apr 25, 2026</td>
+          </tr>
+          <tr onclick="showScreen('profile')">
+            <td><strong>David Peterson</strong></td><td>Simvastatin</td><td>SLCO1B1</td>
+            <td>Standard dose appropriate</td>
+            <td><span class="pill pill-green">Normal</span></td><td>Apr 24, 2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="footer">
+    <span>© 2026 RXPharma | Privacy | Accessibility | Support</span>
+    <span class="badge">WCAG 2.1 AA Compliant</span>
+  </div>
+</div>
+
+<!-- ====== Screen 3: Patient Search ====== -->
+<div class="screen" id="screen-search">
+  <div class="app-header">
+    <div class="logo-box">RxP</div>
+    <div class="brand">RXPharma Clinical Support</div>
+    <div class="app-nav">
+      <a onclick="showScreen('dashboard')">Dashboard</a>
+      <a class="active">Search</a>
+      <a onclick="showScreen('profile')">Patient</a>
+      <a>Reports</a>
+      <a>Help</a>
+      <span class="profile-circle">DS</span>
+    </div>
+  </div>
+  <div class="container">
+    <h1>Patient Search</h1>
+    <p class="subtitle">Search by name, medical record number (MRN), or date of birth</p>
+    <div class="search-box">
+      <div class="search-row">
+        <input class="search-input" placeholder="Enter patient name or MRN…" value="Ndeh">
+        <button class="btn-search">🔍 Search</button>
+      </div>
+      <div class="filters">
+        <span style="color:#7A8B9C">Filter by:</span>
+        <span class="filter-chip active">All</span>
+        <span class="filter-chip">Has genetic results</span>
+        <span class="filter-chip">Pending review</span>
+        <span class="filter-chip">High priority</span>
+      </div>
+    </div>
+    <div class="results-header">
+      <h2>Search Results — 3 patients found</h2>
+      <span style="font-size:13px; color:#7A8B9C;">Sort: Name (A-Z) ▼</span>
+    </div>
+
+    <div class="patient-card" onclick="showScreen('profile')">
+      <div class="patient-info">
+        <strong>Ndeh, Peter A.</strong>
+        <div class="meta-row">
+          <span>MRN: 12345678</span>
+          <span>DOB: 01/15/1965</span>
+          <span>Age: 60</span>
+        </div>
+      </div>
+      <div class="gene-status">
+        <span class="dot dot-green"></span> Has genetic results
+      </div>
+      <span class="priority-badge pri-high">High Priority</span>
+      <button class="btn-view">View →</button>
+    </div>
+
+    <div class="patient-card" onclick="showScreen('profile')">
+      <div class="patient-info">
+        <strong>Garcia, Maria L.</strong>
+        <div class="meta-row">
+          <span>MRN: 87654321</span>
+          <span>DOB: 03/22/1978</span>
+          <span>Age: 47</span>
+        </div>
+      </div>
+      <div class="gene-status">
+        <span class="dot dot-gray"></span> No genetic results
+      </div>
+      <span class="priority-badge pri-low">Routine</span>
+      <button class="btn-view">View →</button>
+    </div>
+
+    <div class="patient-card" onclick="showScreen('profile')">
+      <div class="patient-info">
+        <strong>Peterson, David M.</strong>
+        <div class="meta-row">
+          <span>MRN: 11223344</span>
+          <span>DOB: 07/08/1990</span>
+          <span>Age: 35</span>
+        </div>
+      </div>
+      <div class="gene-status">
+        <span class="dot dot-green"></span> Has genetic results
+      </div>
+      <span class="priority-badge pri-med">Medium</span>
+      <button class="btn-view">View →</button>
+    </div>
+  </div>
+  <div class="footer">
+    <span>© 2026 RXPharma | Privacy | Accessibility | Support</span>
+    <span class="badge">WCAG 2.1 AA Compliant</span>
+  </div>
+</div>
+
+<!-- ====== Screen 4: Patient Profile ====== -->
+<div class="screen" id="screen-profile">
+  <div class="app-header">
+    <div class="logo-box">RxP</div>
+    <div class="brand">RXPharma Clinical Support</div>
+    <div class="app-nav">
+      <a onclick="showScreen('dashboard')">Dashboard</a>
+      <a onclick="showScreen('search')">Search</a>
+      <a class="active">Patient</a>
+      <a>Reports</a>
+      <a>Help</a>
+      <span class="profile-circle">DS</span>
+    </div>
+  </div>
+  <div class="breadcrumb">
+    <a onclick="showScreen('dashboard')">Dashboard</a> &nbsp;›&nbsp;
+    <a onclick="showScreen('search')">Patient Search</a> &nbsp;›&nbsp;
+    Ndeh, Peter A.
+  </div>
+  <div class="container">
+    <div class="patient-banner">
+      <div>
+        <div class="patient-name">Ndeh, Peter A.</div>
+        <div class="patient-meta">
+          <span><strong>MRN:</strong> 12345678</span>
+          <span><strong>DOB:</strong> 01/15/1965</span>
+          <span><strong>Age:</strong> 60</span>
+          <span><strong>Sex:</strong> Male</span>
+          <span><strong>Provider:</strong> Dr. Ndeh</span>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn">🖨 Print</button>
+        <button class="action-btn">✉ Share</button>
+        <button class="action-btn">+ Add Note</button>
+      </div>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <h2>Genetic Test Results <span style="color:#4A90E2">🧬</span></h2>
+        <div class="gene-card">
+          <div class="gene-name">CYP2C19</div>
+          <div class="gene-info">
+            <strong>Genotype:</strong> *1/*2<br>
+            <strong>Test Date:</strong> Mar 12, 2026
+          </div>
+          <span class="pheno-tag pheno-int">Intermediate Metabolizer</span>
+        </div>
+        <div class="gene-card">
+          <div class="gene-name">CYP2D6</div>
+          <div class="gene-info">
+            <strong>Genotype:</strong> *1/*1<br>
+            <strong>Test Date:</strong> Mar 12, 2026
+          </div>
+          <span class="pheno-tag pheno-norm">Normal Metabolizer</span>
+        </div>
+        <div class="gene-card">
+          <div class="gene-name">CYP2C9</div>
+          <div class="gene-info">
+            <strong>Genotype:</strong> *1/*3<br>
+            <strong>Test Date:</strong> Mar 12, 2026
+          </div>
+          <span class="pheno-tag pheno-int">Intermediate Metabolizer</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Active Recommendations <span style="color:#4A90E2">💊</span></h2>
+        <div class="alert-card alert-high" onclick="showScreen('medication')" style="cursor:pointer">
+          <div class="alert-title high-text">
+            <span class="alert-icon icon-high">!</span>High Priority Alert
+          </div>
+          <div class="alert-body">
+            <strong>Clopidogrel:</strong> Consider alternative antiplatelet therapy.<br>
+            Patient is CYP2C19 intermediate metabolizer — reduced drug activation expected.
+          </div>
+          <div class="alert-meta">CPIC Level A · Updated Apr 27, 2026 · Click for details →</div>
+        </div>
+        <div class="alert-card alert-low">
+          <div class="alert-title">
+            <span class="alert-icon icon-low">✓</span>Standard Dosing Appropriate
+          </div>
+          <div class="alert-body">
+            <strong>Warfarin:</strong> Standard dosing appropriate.<br>
+            CYP2C9 genotype supports normal dose range.
+          </div>
+          <div class="alert-meta">CPIC Level A · Updated Apr 27, 2026</div>
+        </div>
+        <div class="alert-card alert-low">
+          <div class="alert-title">
+            <span class="alert-icon icon-low">✓</span>No Genetic Concerns
+          </div>
+          <div class="alert-body">
+            <strong>Lisinopril:</strong> No relevant pharmacogenomic concerns identified.
+          </div>
+          <div class="alert-meta">Reviewed Apr 26, 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>© 2026 RXPharma | Privacy | Accessibility | Support</span>
+    <span class="badge">WCAG 2.1 AA Compliant</span>
+  </div>
+</div>
+
+<!-- ====== Screen 5: Medication Search ====== -->
+<div class="screen" id="screen-medication">
+  <div class="app-header">
+    <div class="logo-box">RxP</div>
+    <div class="brand">RXPharma Clinical Support</div>
+    <div class="app-nav">
+      <a onclick="showScreen('dashboard')">Dashboard</a>
+      <a class="active">Search</a>
+      <a onclick="showScreen('profile')">Patient</a>
+      <a>Reports</a>
+      <a>Help</a>
+      <span class="profile-circle">DS</span>
+    </div>
+  </div>
+  <div class="container">
+    <h1>Medication Search & Recommendations</h1>
+    <p class="subtitle">Search any medication for pharmacogenomic guidance and CPIC recommendations</p>
+    <div class="search-box">
+      <div class="search-row">
+        <input class="search-input" placeholder="Enter medication name (brand or generic)…" value="Clopidogrel">
+        <button class="btn-search">🔍 Search</button>
+      </div>
+      <div style="margin-top:14px; font-size:12px; color:#7A8B9C;">
+        Recent searches:
+        <span class="recent-tag">Warfarin</span>
+        <span class="recent-tag">Codeine</span>
+        <span class="recent-tag">Simvastatin</span>
+        <span class="recent-tag">Tramadol</span>
+      </div>
+    </div>
+    <div class="selected-banner">
+      Selected medication: <strong>Clopidogrel (Plavix®)</strong>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <h2>💊 Drug Information</h2>
+        <div class="info-row"><span class="info-label">Class:</span> Antiplatelet agent (P2Y12 inhibitor)</div>
+        <div class="info-row"><span class="info-label">Indication:</span> Prevention of cardiovascular events</div>
+        <div class="info-row"><span class="info-label">Standard Dose:</span> 75 mg once daily</div>
+        <div class="info-row"><span class="info-label">FDA Approved:</span> Yes — 1997</div>
+        <div class="info-row"><span class="info-label">Genetic Testing:</span> CYP2C19 affects activation</div>
+      </div>
+      <div class="panel">
+        <h2>🧬 Relevant Genes</h2>
+        <div class="info-row"><span class="info-label">Primary Gene:</span> CYP2C19</div>
+        <div class="info-row"><span class="info-label">Effect:</span> Required for activation</div>
+        <div class="info-row"><span class="info-label">Testing Recommended:</span> Yes</div>
+        <div class="info-row"><span class="info-label">FDA Boxed Warning:</span> Yes — Poor metabolizers</div>
+        <div class="info-row"><span class="info-label">CPIC Level:</span> A (Strong evidence)</div>
+      </div>
+    </div>
+    <div class="full-panel">
+      <h2>Pharmacogenomic Considerations</h2>
+      <div class="impact-box">
+        <div class="impact-title">⚠ CYP2C19 Gene Impact</div>
+        <div class="impact-body">
+          Patients with reduced-function CYP2C19 alleles may have decreased drug activation, leading to reduced antiplatelet effect and increased risk of cardiovascular events. Approximately 30% of the population carries at least one reduced-function allele.
+        </div>
+      </div>
+      <div class="cpic-box">
+        <div class="cpic-title">
+          ✓ CPIC Recommendation
+          <span class="cpic-level">Level A</span>
+        </div>
+        <div class="cpic-body">
+          <strong>Intermediate / Poor Metabolizers:</strong> Consider alternative antiplatelet therapy (e.g., prasugrel or ticagrelor) if no contraindication.<br>
+          <strong>Normal / Rapid Metabolizers:</strong> Standard dosing of clopidogrel is appropriate.<br>
+          <strong>Ultra-rapid Metabolizers:</strong> Standard dosing; monitor for bleeding.
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-blue">View Full Prescribing Info</button>
+        <button class="btn btn-outline">📄 Print Recommendation</button>
+        <button class="btn btn-outline">⭐ Save to Favorites</button>
+        <button class="btn btn-outline" onclick="showScreen('profile')">← Back to Patient</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>© 2026 RXPharma | Privacy | Accessibility | Support</span>
+    <span class="badge">WCAG 2.1 AA Compliant</span>
+  </div>
+</div>
+
+<script>
+  function showScreen(name) {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Show requested screen
+    const target = document.getElementById('screen-' + name);
+    if (target) target.classList.add('active');
+    // Update toolbar buttons
+    document.querySelectorAll('.proto-toolbar button').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('btn-' + name);
+    if (btn) btn.classList.add('active');
+    // Scroll to top
+    window.scrollTo(0, 0);
+  }
+
+  // Keyboard accessibility — number keys 1-5 jump to screens
+  document.addEventListener('keydown', function(e) {
+    const keyMap = {
+      '1': 'login', '2': 'dashboard', '3': 'search',
+      '4': 'profile', '5': 'medication'
+    };
+    if (keyMap[e.key] && !e.target.matches('input, textarea')) {
+      showScreen(keyMap[e.key]);
+    }
+  });
+</script>
+</body>
+</html>
